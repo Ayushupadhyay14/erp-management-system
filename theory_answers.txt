@@ -1,0 +1,85 @@
+
+=== Section 5: Conceptual Questions ===
+
+1. How to structure an ERP system using Python and Django/Flask?
+
+I would use Django because it has built-in admin panel and ORM which saves time.
+Structure would be like:
+- Separate apps for each module: inventory, sales, customers, reports
+- Models for Products, Orders, Customers in their respective apps
+- REST APIs using Django REST Framework for frontend communication
+- Use Django's auth system for user login and role-based access
+- Celery for background tasks like generating reports or sending emails
+- PostgreSQL as database because it handles complex queries well
+
+Basically each ERP module (HR, inventory, sales) becomes a Django app,
+and they talk to each other through shared models or internal APIs.
+
+
+2. Advantages of using ORM (SQLAlchemy/Django ORM) in ERP development?
+
+- No need to write raw SQL, so less chances of SQL injection
+- Database tables are defined as Python classes, easier to read and maintain
+- Can switch databases (SQLite for dev, PostgreSQL for prod) without rewriting queries
+- Migrations are handled automatically, so schema changes are tracked properly
+- Relationships between tables (ForeignKey, ManyToMany) are simple to define
+- In ERP we have many related tables (products, orders, customers), ORM makes
+  joins and lookups much simpler with things like order.customer.name
+
+
+3. How to handle concurrency if multiple users update stock at the same time?
+
+Main issue is race condition - two users read same stock value, both subtract,
+and final value is wrong.
+
+Solutions:
+- Use database-level locking: SELECT FOR UPDATE locks the row while one
+  transaction is updating it, others wait
+- Django has F() expressions: Product.objects.filter(id=1).update(stock=F('stock')-qty)
+  This runs the subtraction in the database itself, not in Python, so it's atomic
+- Add a check constraint in DB so stock never goes below 0
+- For high traffic, can use optimistic locking with a version field -
+  update only if version matches, retry if someone else changed it first
+- Use transactions properly: wrap read + update in a single transaction
+
+
+=== Python Questions ===
+
+1. *args allows passing multiple positional arguments as a tuple.
+   **kwargs allows passing keyword arguments as a dictionary.
+
+2. @staticmethod does not take self or cls, works like a normal function inside class.
+   @classmethod takes cls as first argument, can access class-level data.
+   Instance method takes self, works with the specific object.
+
+3. Use set when you need unique elements and fast lookups (O(1)).
+   List allows duplicates and maintains order. Set is better for membership checks.
+
+4. Method overriding is when a child class redefines a method from parent class
+   with its own implementation. The child version runs instead of parent's.
+
+5. super() calls the parent class method. Useful in __init__ to initialize
+   parent class attributes before adding child-specific ones.
+
+6. Custom exceptions:
+   class InsufficientStockError(Exception):
+       def __init__(self, product):
+           super().__init__(f"Not enough stock for {product}")
+   Raise it with: raise InsufficientStockError("Laptop")
+
+7. Handle API failure:
+   Use try-except around the request, catch specific exceptions like
+   requests.exceptions.Timeout, ConnectionError. Add retries with backoff.
+   Always set a timeout in requests.get() so it doesn't hang forever.
+
+8. Encapsulation means keeping data private inside a class using _ or __ prefix.
+   Access is controlled through getter/setter methods or @property decorator.
+   This prevents outside code from directly modifying internal state.
+
+9. Context managers handle setup and cleanup automatically.
+   with open('file.txt') as f - file closes even if exception occurs.
+   Can make custom ones using __enter__ and __exit__ methods or @contextmanager.
+
+10. List comprehension: [x*2 for x in range(10)] - faster, one line, readable.
+    Loop is better when logic is complex or has multiple conditions/side effects.
+    For simple transformations, always prefer list comprehension.
