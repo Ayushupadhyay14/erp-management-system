@@ -3,7 +3,7 @@ import psycopg2
 
 def connect():
     return psycopg2.connect(
-        dbname="erp", user="postgres", password="12345678", host="localhost"
+        dbname="erp", user="postgres", password="password", host="localhost"
     )
 
 
